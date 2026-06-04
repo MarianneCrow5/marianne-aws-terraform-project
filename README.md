@@ -1,3 +1,4 @@
+This project demonstrates a complete AWS infrastructure deployment using Terraform, including IAM, Lambda, S3, and ECS components.
 # Final Project – AWS Terraform Pipeline
 
 This repository contains my IT 261 final project, which demonstrates a working AWS pipeline built with Terraform. The project includes:
