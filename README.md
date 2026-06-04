@@ -22,4 +22,10 @@ This project provisions AWS resources using Terraform, deploys a Lambda function
 - `/terraform` – all Terraform configuration files
 - `/screenshots` – proof of working pipeline
 - Documentation files in the root folder
+- 
+## Screenshots
+All screenshots are included in the documentation files:
+- final project screenshots.docx
+- more screenshots of final project.docx
+- even more screenshots.docx
 
