@@ -1,5 +1,8 @@
+# IAM roles and policies required for the Lambda function and ECS task
+
+# IAM role assumed by the Lambda function
 resource "aws_iam_role" "lambda_role" {
-  name = "bmr-lambda-role"
+  name = "lambda_execution_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -15,8 +18,10 @@ resource "aws_iam_role" "lambda_role" {
   })
 }
 
+# IAM policy granting Lambda access to S3, DynamoDB, ECS, and CloudWatch Logs
 resource "aws_iam_policy" "lambda_policy" {
-  name = "bmr-lambda-policy"
+  name        = "lambda_execution_policy"
+  description = "Permissions for Lambda to access S3, DynamoDB, ECS, and CloudWatch Logs"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -28,29 +33,22 @@ resource "aws_iam_policy" "lambda_policy" {
           "s3:PutObject"
         ]
         Resource = [
-          "arn:aws:s3:::${var.input_bucket}/*",
-          "arn:aws:s3:::${var.output_bucket}/*"
+          "${data.aws_s3_bucket.input.arn}/*",
+          "${data.aws_s3_bucket.output.arn}/*"
         ]
       },
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem"
         ]
-        Resource = "arn:aws:dynamodb:us-west-2:*:table/${var.ddb_table}"
+        Resource = "arn:aws:dynamodb:*:*:table/${var.ddb_table}"
       },
       {
         Effect = "Allow"
         Action = [
-          "ecs:RunTask"
-        ]
-        Resource = "${var.task_definition_arn}"
-      },
-      {
-        Effect = "Allow"
-        Action = [
+          "ecs:RunTask",
           "iam:PassRole"
         ]
         Resource = "*"
@@ -68,7 +66,8 @@ resource "aws_iam_policy" "lambda_policy" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
+# Attach the policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
