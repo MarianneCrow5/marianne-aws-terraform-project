@@ -12,6 +12,14 @@ This repository contains my IT 261 final project, which demonstrates a working A
 ## What the project does
 This project provisions AWS resources using Terraform, deploys a Lambda function, and demonstrates automated infrastructure deployment.
 
+## Terraform File Overview
+**main.tf** – Defines the Terraform provider and AWS region  
+**variables.tf** – Stores input variables used across the configuration  
+**S3.tf** – Defines the S3 buckets used for input and output  
+**iam.tf** – Creates IAM roles and policies for Lambda and ECS  
+**lambda.tf** – Deploys the Lambda function and its permissions  
+**ecs.tf** – Defines the ECS task used to process files
+
 ## How to run it
 1. Install Terraform
 2. Configure AWS credentials
