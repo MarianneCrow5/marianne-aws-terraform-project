@@ -12,17 +12,15 @@ This repository contains my IT 261 final project, which demonstrates a working A
 ## What the project does
 This project provisions AWS resources using Terraform, deploys a Lambda function, and demonstrates automated infrastructure deployment.
 
-Presigned URL Generator (Lightweight Lambda)
-To support uploading any user‑selected image to the S3 input bucket, the project includes a small Lambda function that generates pre‑signed S3 URLs on demand.
-This Lambda runs only when a user uploads a file and executes for just a few milliseconds. Because of this, it has negligible cost and does not materially affect the project budget that was previously submitted.
+## Presigned URL Generator (Lightweight Lambda)
+
+To support uploading any user‑selected image to the S3 input bucket, the project includes a small Lambda function that generates **pre‑signed S3 URLs** on demand. This Lambda runs only when a user uploads a file and executes for just a few milliseconds. Because of this, it has **negligible cost** and does **not** materially affect the project budget that was previously submitted.
 
 This Lambda enables the upload page to:
 
-request a fresh pre‑signed URL for each file
-
-support any filename and content type
-
-securely upload images to the S3 input bucket
+- request a fresh pre‑signed URL for each file  
+- support any filename and content type  
+- securely upload images to the S3 input bucket  
 
 This component is a standard part of S3 upload architecture and ensures the frontend upload tool works reliably.
 
