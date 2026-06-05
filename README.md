@@ -23,54 +23,41 @@ This Lambda enables the upload page to:
 - securely upload images to the S3 input bucket  
 
 This component is a standard part of S3 upload architecture and ensures the frontend upload tool works reliably.
-import json
-import boto3
-import uuid
-from datetime import datetime
 
-dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table("bmr-dynamodb-table")   # your shared table name
+## S3‑Triggered Lambda: Image Metadata Processor
 
-def lambda_handler(event, context):
-    # Extract S3 event info
-    record = event["Records"][0]
-    bucket = record["s3"]["bucket"]["name"]
-    key = record["s3"]["object"]["key"]
-    size = record["s3"]["object"].get("size", 0)
+This Lambda function is the entry point for my portion of the serverless pipeline. It is triggered automatically whenever a new file is uploaded to the designated S3 input bucket. The function retrieves the object metadata, performs basic validation, and writes a structured record into the shared DynamoDB table (`bmr-dynamodb-table`) used by the group.
 
-    # Basic validation
-    if size == 0:
-        print(f"Skipping empty file: {key}")
-        return {"status": "skipped", "reason": "empty file"}
+### Trigger
+- **Event Source:** `s3:ObjectCreated:*`
+- **Bucket:** Beau’s shared input bucket (ARN provided in Terraform variables)
 
-    # Derive file type from extension
-    filetype = key.split(".")[-1].lower()
+### Function Responsibilities
+- Parse the S3 event notification to extract:
+  - Bucket name  
+  - Object key  
+  - Timestamp  
+  - File size  
+  - File type (derived from key or metadata)
+- Validate that the uploaded object meets expected criteria (image file, non‑zero size)
+- Generate a unique record ID for DynamoDB
+- Write a structured item to the shared DynamoDB table with:
+  - `id` (UUID)  
+  - `filename`  
+  - `bucket`  
+  - `timestamp`  
+  - `filesize`  
+  - `filetype`  
+  - `status` (“received”)  
+  - `notes` (“Initial metadata recorded”)
 
-    # Build DynamoDB item
-    item = {
-        "id": str(uuid.uuid4()),
-        "filename": key,
-        "bucket": bucket,
-        "timestamp": datetime.utcnow().isoformat(),
-        "filesize": size,
-        "filetype": filetype,
-        "status": "received",
-        "notes": "Initial metadata recorded"
-    }
+### Outputs
+- A DynamoDB record representing the uploaded file and its initial processing state  
+- CloudWatch logs for debugging and traceability  
 
-    # Write to DynamoDB
-    table.put_item(Item=item)
-
-    print(f"Metadata stored for {key}")
-    return {"status": "ok", "item": item}
-
-Outputs
-A DynamoDB record representing the uploaded file and its initial processing state
-
-CloudWatch logs for debugging and traceability
-
-Why This Matters
+### Why This Matters
 This Lambda function establishes the first step in the pipeline and ensures that every uploaded file is tracked consistently. It also decouples the upload interface from downstream processing, allowing the ECS/Fargate stage to operate independently.
+
 ## Terraform File Overview
 **main.tf** – Defines the Terraform provider and AWS region  
 **variables.tf** – Stores input variables used across the configuration  
@@ -89,10 +76,9 @@ This Lambda function establishes the first step in the pipeline and ensures that
 - `/terraform` – all Terraform configuration files
 - `/screenshots` – proof of working pipeline
 - Documentation files in the root folder
-- 
+
 ## Screenshots
 All screenshots are included in the documentation files:
 - final project screenshots.docx
 - more screenshots of final project.docx
 - even more screenshots.docx
-
