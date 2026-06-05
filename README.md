@@ -23,45 +23,46 @@ This Lambda enables the upload page to:
 - securely upload images to the S3 input bucket  
 
 This component is a standard part of S3 upload architecture and ensures the frontend upload tool works reliably.
+import json
+import boto3
+import uuid
+from datetime import datetime
 
-Lambda Function: Image Metadata Processor
-This Lambda function is the entry point for my portion of the serverless pipeline. It is triggered automatically whenever a new file is uploaded to the designated S3 input bucket. The function retrieves the object metadata, performs basic validation, and writes a structured record into the shared DynamoDB table (bmr-dynamodb-table) used by the group.
+dynamodb = boto3.resource("dynamodb")
+table = dynamodb.Table("bmr-dynamodb-table")   # your shared table name
 
-Trigger
-Event Source: S3 ObjectCreated:*
+def lambda_handler(event, context):
+    # Extract S3 event info
+    record = event["Records"][0]
+    bucket = record["s3"]["bucket"]["name"]
+    key = record["s3"]["object"]["key"]
+    size = record["s3"]["object"].get("size", 0)
 
-Bucket: Beau’s shared input bucket (ARN provided in Terraform variables)
+    # Basic validation
+    if size == 0:
+        print(f"Skipping empty file: {key}")
+        return {"status": "skipped", "reason": "empty file"}
 
-Function Responsibilities
-Parse the S3 event notification to extract:
+    # Derive file type from extension
+    filetype = key.split(".")[-1].lower()
 
-Bucket name
+    # Build DynamoDB item
+    item = {
+        "id": str(uuid.uuid4()),
+        "filename": key,
+        "bucket": bucket,
+        "timestamp": datetime.utcnow().isoformat(),
+        "filesize": size,
+        "filetype": filetype,
+        "status": "received",
+        "notes": "Initial metadata recorded"
+    }
 
-Object key
+    # Write to DynamoDB
+    table.put_item(Item=item)
 
-Timestamp
-
-File size
-
-File type (derived from key or metadata)
-
-Validate that the uploaded object meets expected criteria (image file, non‑zero size)
-
-Generate a unique record ID for DynamoDB
-
-Write a structured item to the shared DynamoDB table with:
-
-id (UUID)
-
-filename
-
-bucket
-
-timestamp
-
-status (“received”)
-
-notes (optional field for future processing stages)
+    print(f"Metadata stored for {key}")
+    return {"status": "ok", "item": item}
 
 Outputs
 A DynamoDB record representing the uploaded file and its initial processing state
