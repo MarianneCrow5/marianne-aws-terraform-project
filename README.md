@@ -24,6 +24,52 @@ This Lambda enables the upload page to:
 
 This component is a standard part of S3 upload architecture and ensures the frontend upload tool works reliably.
 
+Lambda Function: Image Metadata Processor
+This Lambda function is the entry point for my portion of the serverless pipeline. It is triggered automatically whenever a new file is uploaded to the designated S3 input bucket. The function retrieves the object metadata, performs basic validation, and writes a structured record into the shared DynamoDB table (bmr-dynamodb-table) used by the group.
+
+Trigger
+Event Source: S3 ObjectCreated:*
+
+Bucket: Beau’s shared input bucket (ARN provided in Terraform variables)
+
+Function Responsibilities
+Parse the S3 event notification to extract:
+
+Bucket name
+
+Object key
+
+Timestamp
+
+File size
+
+File type (derived from key or metadata)
+
+Validate that the uploaded object meets expected criteria (image file, non‑zero size)
+
+Generate a unique record ID for DynamoDB
+
+Write a structured item to the shared DynamoDB table with:
+
+id (UUID)
+
+filename
+
+bucket
+
+timestamp
+
+status (“received”)
+
+notes (optional field for future processing stages)
+
+Outputs
+A DynamoDB record representing the uploaded file and its initial processing state
+
+CloudWatch logs for debugging and traceability
+
+Why This Matters
+This Lambda function establishes the first step in the pipeline and ensures that every uploaded file is tracked consistently. It also decouples the upload interface from downstream processing, allowing the ECS/Fargate stage to operate independently.
 ## Terraform File Overview
 **main.tf** – Defines the Terraform provider and AWS region  
 **variables.tf** – Stores input variables used across the configuration  
